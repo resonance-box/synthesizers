@@ -1,37 +1,37 @@
-export type SoundFont2SynthNodeMessageData =
+export type SynthesizerNodeMessageDataForSetup =
   | {
-      type: 'wasm-module-loaded'
+      type: 'loadedWasmModule'
     }
   | {
-      type: 'init-completed-synth'
+      type: 'initializedSynthesizer'
     }
   | {
-      type: 'connected-to-port'
+      type: 'connectedToPort'
     }
 
-export type SoundFont2SynthProcessorMessageData =
+export type SynthesizerProcessorMessageDataForSetup =
   | {
-      type: 'send-wasm-module'
+      type: 'sendWasmModule'
       wasmBytes: ArrayBuffer
       sf2Bytes: ArrayBuffer
     }
   | {
-      type: 'init-synth'
+      type: 'initializeSynthesizer'
       sampleRate: number
     }
   | {
-      type: 'connect-to-port'
+      type: 'connectToPort'
     }
+
+export type SynthesizerProcessorMessageData =
   | {
-      type: 'note-on'
-      channel: number
+      type: 'noteOn'
       key: number
       vel: number
       delayTime?: number
     }
   | {
-      type: 'note-off'
-      channel: number
+      type: 'noteOff'
       key: number
       delayTime?: number
     }

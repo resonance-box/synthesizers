@@ -2,6 +2,8 @@ use oxisynth::{MidiEvent, SoundFont, Synth, SynthDescriptor};
 use std::io::Cursor;
 use wasm_bindgen::prelude::*;
 
+const CHANNEL: u8 = 0;
+
 struct ScheduledMidiEvent {
     frame: usize,
     event: MidiEvent,
@@ -16,6 +18,7 @@ pub struct SoundFont2Synthesizer {
 
 #[wasm_bindgen]
 impl SoundFont2Synthesizer {
+    #[wasm_bindgen(constructor)]
     pub fn new(sf2_bytes: &[u8], sample_rate: f32) -> SoundFont2Synthesizer {
         let mut synth = Synth::new(SynthDescriptor {
             sample_rate,
@@ -34,7 +37,8 @@ impl SoundFont2Synthesizer {
         }
     }
 
-    pub fn note_on(&mut self, channel: u8, key: u8, vel: u8, delay_frame: Option<usize>) {
+    #[wasm_bindgen(js_name = "noteOn")]
+    pub fn note_on(&mut self, key: u8, vel: u8, delay_frame: Option<usize>) {
         if let Some(delay_frame) = delay_frame {
             let frame = self.current_frame + delay_frame;
             let idx = self.scheduled_events.partition_point(|e| e.frame > frame);
@@ -43,21 +47,30 @@ impl SoundFont2Synthesizer {
                 idx,
                 ScheduledMidiEvent {
                     frame,
-                    event: MidiEvent::NoteOn { channel, key, vel },
+                    event: MidiEvent::NoteOn {
+                        channel: CHANNEL,
+                        key,
+                        vel,
+                    },
                 },
             );
         } else {
-            self.note_on_immediately(channel, key, vel);
+            self.note_on_immediately(key, vel);
         }
     }
 
-    fn note_on_immediately(&mut self, channel: u8, key: u8, vel: u8) {
+    fn note_on_immediately(&mut self, key: u8, vel: u8) {
         self.synth
-            .send_event(MidiEvent::NoteOn { channel, key, vel })
+            .send_event(MidiEvent::NoteOn {
+                channel: CHANNEL,
+                key,
+                vel,
+            })
             .ok();
     }
 
-    pub fn note_off(&mut self, channel: u8, key: u8, delay_frame: Option<usize>) {
+    #[wasm_bindgen(js_name = "noteOff")]
+    pub fn note_off(&mut self, key: u8, delay_frame: Option<usize>) {
         if let Some(delay_frame) = delay_frame {
             let frame = self.current_frame + delay_frame;
             let idx = self.scheduled_events.partition_point(|e| e.frame > frame);
@@ -66,17 +79,23 @@ impl SoundFont2Synthesizer {
                 idx,
                 ScheduledMidiEvent {
                     frame,
-                    event: MidiEvent::NoteOff { channel, key },
+                    event: MidiEvent::NoteOff {
+                        channel: CHANNEL,
+                        key,
+                    },
                 },
             );
         } else {
-            self.note_off_immediately(channel, key);
+            self.note_off_immediately(key);
         }
     }
 
-    fn note_off_immediately(&mut self, channel: u8, key: u8) {
+    fn note_off_immediately(&mut self, key: u8) {
         self.synth
-            .send_event(MidiEvent::NoteOff { channel, key })
+            .send_event(MidiEvent::NoteOff {
+                channel: CHANNEL,
+                key,
+            })
             .ok();
     }
 
@@ -87,10 +106,12 @@ impl SoundFont2Synthesizer {
             }
 
             match event.event {
-                MidiEvent::NoteOn { channel, key, vel } => {
-                    self.note_on_immediately(channel, key, vel)
-                }
-                MidiEvent::NoteOff { channel, key } => self.note_off_immediately(channel, key),
+                MidiEvent::NoteOn {
+                    channel: _,
+                    key,
+                    vel,
+                } => self.note_on_immediately(key, vel),
+                MidiEvent::NoteOff { channel: _, key } => self.note_off_immediately(key),
                 _ => (),
             }
 
@@ -98,7 +119,8 @@ impl SoundFont2Synthesizer {
         }
     }
 
-    pub fn read_next_block(&mut self, block_size: usize) -> JsValue {
+    #[wasm_bindgen(js_name = "nextBlock")]
+    pub fn next_block(&mut self, block_size: usize) -> JsValue {
         self.current_frame += block_size;
         self.process_scheduled_events();
 

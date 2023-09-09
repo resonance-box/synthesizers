@@ -9,10 +9,9 @@ self.addEventListener('message', (e) => {
       audioWorkletPort = e.ports[0]
       audioWorkletPort.onmessage = onMessageFromAudioWorklet
       break
-    case 'note-on':
+    case 'noteOn':
       audioWorkletPort?.postMessage({
-        type: 'note-on',
-        channel: 0,
+        type: 'noteOn',
         key: 60,
         vel: 100,
         delayTime: 0,

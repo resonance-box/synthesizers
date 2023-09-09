@@ -3,44 +3,47 @@ import './text-encoder-decoder.js'
 import { PROCESSOR_NAME } from './constants.js'
 import init, { SoundFont2Synthesizer } from './generated/wasm/synthesizers'
 import {
-  type SoundFont2SynthNodeMessageData,
-  type SoundFont2SynthProcessorMessageData,
+  type SynthesizerNodeMessageDataForSetup,
+  type SynthesizerProcessorMessageData,
+  type SynthesizerProcessorMessageDataForSetup,
 } from './types'
 
-interface SoundFont2SynthProcessor extends AudioWorkletProcessor {
+interface SoundFont2SynthesizerProcessor extends AudioWorkletProcessor {
   noteOn: (channel: number, key: number, vel: number, delayTime: number) => void
   noteOff: (channel: number, key: number, delayTime: number) => void
 }
 
 class SoundFont2SynthProcessorImpl
   extends AudioWorkletProcessor
-  implements SoundFont2SynthProcessor
+  implements SoundFont2SynthesizerProcessor
 {
   synth?: SoundFont2Synthesizer
   sf2Bytes?: ArrayBuffer
-  connectedPort?: MessagePort
+  _port?: MessagePort
 
   constructor() {
     super()
 
     this.port.onmessage = (event) => {
-      this.onmessage(event)
+      this.onmessageForSetup(event)
     }
 
     this.synth = undefined
     this.sf2Bytes = undefined
   }
 
-  onmessage(event: MessageEvent<SoundFont2SynthProcessorMessageData>): void {
+  onmessageForSetup(
+    event: MessageEvent<SynthesizerProcessorMessageDataForSetup>,
+  ): void {
     const data = event.data
-    let postData: SoundFont2SynthNodeMessageData
+    let postData: SynthesizerNodeMessageDataForSetup
 
     switch (data.type) {
-      case 'send-wasm-module':
+      case 'sendWasmModule':
         init(WebAssembly.compile(data.wasmBytes))
           .then(() => {
-            const data: SoundFont2SynthNodeMessageData = {
-              type: 'wasm-module-loaded',
+            const data: SynthesizerNodeMessageDataForSetup = {
+              type: 'loadedWasmModule',
             }
             this.port.postMessage(data)
           })
@@ -49,52 +52,61 @@ class SoundFont2SynthProcessorImpl
           })
         this.sf2Bytes = data.sf2Bytes
         break
-      case 'init-synth': {
+      case 'initializeSynthesizer': {
         if (this.sf2Bytes == null) {
           throw new Error('sf2Bytes is undefined')
         }
 
-        this.synth = SoundFont2Synthesizer.new(
+        this.synth = new SoundFont2Synthesizer(
           new Uint8Array(this.sf2Bytes),
           data.sampleRate,
         )
 
         postData = {
-          type: 'init-completed-synth',
+          type: 'initializedSynthesizer',
         }
         this.port.postMessage(postData)
         break
       }
-      case 'connect-to-port':
-        this.connectedPort = event.ports[0]
-        this.connectedPort.onmessage = (event) => {
+      case 'connectToPort':
+        this._port = event.ports[0]
+        this._port.onmessage = (event) => {
           this.onmessage(event)
         }
 
         postData = {
-          type: 'connected-to-port',
+          type: 'connectedToPort',
         }
         this.port.postMessage(postData)
-        break
-      case 'note-on':
-        this.noteOn(data.channel, data.key, data.vel, data.delayTime)
-        break
-      case 'note-off':
-        this.noteOff(data.channel, data.key, data.delayTime)
         break
       default:
         break
     }
   }
 
-  noteOn(channel: number, key: number, vel: number, delayTime?: number): void {
-    if (this.synth == null) return
-    this.synth.note_on(channel, key, vel, delayTime)
+  onmessage(event: MessageEvent<SynthesizerProcessorMessageData>): void {
+    const data = event.data
+
+    switch (data.type) {
+      case 'noteOn':
+        this.noteOn(data.key, data.vel, data.delayTime)
+        break
+      case 'noteOff':
+        this.noteOff(data.key, data.delayTime)
+        break
+      default:
+        break
+    }
   }
 
-  noteOff(channel: number, key: number, delayTime?: number): void {
+  noteOn(key: number, vel: number, delayTime?: number): void {
     if (this.synth == null) return
-    this.synth.note_off(channel, key, delayTime)
+    this.synth.noteOn(key, vel, delayTime)
+  }
+
+  noteOff(key: number, delayTime?: number): void {
+    if (this.synth == null) return
+    this.synth.noteOff(key, delayTime)
   }
 
   process(_inputs: Float32Array[][], outputs: Float32Array[][]): boolean {
@@ -102,7 +114,7 @@ class SoundFont2SynthProcessorImpl
 
     const outputChannels = outputs[0]
     const blockSize = outputChannels[0].length
-    const nextBlock = this.synth.read_next_block(blockSize)
+    const nextBlock = this.synth.nextBlock(blockSize)
     outputChannels[0].set(nextBlock[0])
     outputChannels.length > 1 && outputChannels[1].set(nextBlock[1])
 

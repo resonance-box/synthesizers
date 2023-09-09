@@ -1,1 +1,1 @@
-export { createSoundFont2SynthNode } from './node'
+export * from './synthesizer'

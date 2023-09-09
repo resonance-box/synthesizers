@@ -1,5 +1,5 @@
+import { createSoundFont2Synthesizer } from '@resonance-box/synthesizers'
 import { useState } from 'react'
-import { createSoundFont2SynthNode } from '../../../dist'
 import './App.css'
 import reactLogo from './assets/react.svg'
 import Worker from './worker.ts?worker'
@@ -10,9 +10,9 @@ const worker = new Worker()
 worker.postMessage('connect', [channel.port1])
 
 function App() {
-  const [node, setNode] = useState<AudioWorkletNode>()
+  const [started, setStarted] = useState(false)
 
-  if (!node) {
+  if (!started) {
     return (
       <button
         onClick={async () => {
@@ -21,13 +21,8 @@ function App() {
             './assets/GeneralUser GS v1.471.sf2',
             import.meta.url,
           )
-          const node = await createSoundFont2SynthNode(
-            channel.port2,
-            context,
-            url,
-          )
-          node.connect(context.destination)
-          setNode(node)
+          await createSoundFont2Synthesizer(channel.port2, context, url)
+          setStarted(true)
         }}
       >
         Start
@@ -47,7 +42,10 @@ function App() {
       </div>
       <h1>Vite + React + Worker + Audio Worklet</h1>
       <div className="card">
-        <button disabled={!node} onClick={() => worker.postMessage('note-on')}>
+        <button
+          disabled={!started}
+          onClick={() => worker.postMessage('noteOn')}
+        >
           NoteOn
         </button>
       </div>
