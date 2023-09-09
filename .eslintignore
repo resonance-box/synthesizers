@@ -1,0 +1,7 @@
+.eslintrc.js
+dist
+node_modules
+vite.config.ts
+pnpm-lock.yaml
+*.spec.ts
+src/generated

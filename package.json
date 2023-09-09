@@ -1,0 +1,78 @@
+{
+  "name": "@resonance-box/synthesizers",
+  "version": "0.0.0",
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/resonance-box/synthesizers.git"
+  },
+  "homepage": "https://github.com/resonance-box/synthesizers#readme",
+  "bugs": {
+    "url": "https://github.com/resonance-box/synthesizers/issues"
+  },
+  "license": "MIT",
+  "author": "ot07",
+  "engines": {
+    "node": ">=18.x",
+    "pnpm": ">=7.x"
+  },
+  "packageManager": "pnpm@8.7.0",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "build": "pnpm clean && pnpm clean:wasm && pnpm clean:processor && pnpm build:wasm && pnpm build:processor && tsc && vite build",
+    "clean": "rimraf dist",
+    "build:wasm": "pnpm clean:wasm && wasm-pack build wasm-src --release --target web --out-dir ../src/generated/wasm",
+    "clean:wasm": "rimraf wasm-src/target src/generated/wasm",
+    "build:processor": "pnpm clean:processor && rollup -c rollup-processor.config.mjs",
+    "watch:processor": "pnpm clean:processor && rollup -c rollup-processor.config.mjs -w",
+    "clean:processor": "rimraf src/generated/processor.js src/generated/processor.js.map",
+    "test": "pnpm test:e2e:prepare && pnpm test:e2e",
+    "test:e2e:prepare": "cd tests/e2e && [ ! -d 'node_modules' ] && pnpm install || true",
+    "test:e2e": "cd tests/e2e && pnpm test",
+    "lint": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "lint:wasm": "cd wasm-src && cargo clippy -- -D warnings",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:wasm": "cd wasm-src && cargo fmt",
+    "format:check:wasm": "cd wasm-src && cargo fmt --check"
+  },
+  "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.3",
+    "@rollup/plugin-typescript": "^11.1.3",
+    "@types/node": "^20.5.7",
+    "@typescript-eslint/eslint-plugin": "^6.5.0",
+    "eslint": "^8.48.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-standard-with-typescript": "^39.0.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-n": "^16.0.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-react": "^7.33.2",
+    "lint-staged": "^14.0.1",
+    "prettier": "^3.0.3",
+    "prettier-plugin-organize-imports": "^3.2.3",
+    "rimraf": "^5.0.1",
+    "rollup": "^3.28.1",
+    "tslib": "^2.6.2",
+    "typescript": "^5.2.2",
+    "vite": "^4.4.9",
+    "vite-plugin-dts": "^3.5.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
