@@ -26,12 +26,12 @@ export type SynthesizerProcessorMessageDataForSetup =
 export type SynthesizerEventMessageData =
   | {
       kind: 'noteOn'
-      key: number
-      vel: number
+      noteNumber: number
+      velocity: number
       delayTime?: number
     }
   | {
       kind: 'noteOff'
-      key: number
+      noteNumber: number
       delayTime?: number
     }

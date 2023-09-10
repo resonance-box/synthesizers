@@ -96,10 +96,10 @@ class SoundFont2SynthProcessorImpl
 
     switch (data.kind) {
       case 'noteOn':
-        this.noteOn(data.key, data.vel, data.delayTime)
+        this.noteOn(data.noteNumber, data.velocity, data.delayTime)
         break
       case 'noteOff':
-        this.noteOff(data.key, data.delayTime)
+        this.noteOff(data.noteNumber, data.delayTime)
         break
       default:
         break
