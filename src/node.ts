@@ -29,7 +29,7 @@ export class SoundFont2SynthesizerNodeImpl extends AudioWorkletNode {
     }
 
     const data: SynthesizerProcessorMessageDataForSetup = {
-      type: 'sendWasmModule',
+      kind: 'sendWasmModule',
       wasmBytes,
       sf2Bytes,
     }
@@ -47,10 +47,10 @@ export class SoundFont2SynthesizerNodeImpl extends AudioWorkletNode {
   onmessage(event: MessageEvent<SynthesizerNodeMessageDataForSetup>): void {
     const data = event.data
 
-    switch (data.type) {
+    switch (data.kind) {
       case 'loadedWasmModule': {
         const data: SynthesizerProcessorMessageDataForSetup = {
-          type: 'initializeSynthesizer',
+          kind: 'initializeSynthesizer',
           sampleRate: this.context.sampleRate,
         }
         this.port.postMessage(data)
@@ -58,7 +58,7 @@ export class SoundFont2SynthesizerNodeImpl extends AudioWorkletNode {
       }
       case 'initializedSynthesizer': {
         const data: SynthesizerProcessorMessageDataForSetup = {
-          type: 'connectToPort',
+          kind: 'connectToPort',
         }
         this.port.postMessage(data, [this._port])
         break

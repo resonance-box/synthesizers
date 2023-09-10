@@ -1,37 +1,37 @@
 export type SynthesizerNodeMessageDataForSetup =
   | {
-      type: 'loadedWasmModule'
+      kind: 'loadedWasmModule'
     }
   | {
-      type: 'initializedSynthesizer'
+      kind: 'initializedSynthesizer'
     }
   | {
-      type: 'connectedToPort'
+      kind: 'connectedToPort'
     }
 
 export type SynthesizerProcessorMessageDataForSetup =
   | {
-      type: 'sendWasmModule'
+      kind: 'sendWasmModule'
       wasmBytes: ArrayBuffer
       sf2Bytes: ArrayBuffer
     }
   | {
-      type: 'initializeSynthesizer'
+      kind: 'initializeSynthesizer'
       sampleRate: number
     }
   | {
-      type: 'connectToPort'
+      kind: 'connectToPort'
     }
 
-export type SynthesizerProcessorMessageData =
+export type SynthesizerEventMessageData =
   | {
-      type: 'noteOn'
+      kind: 'noteOn'
       key: number
       vel: number
       delayTime?: number
     }
   | {
-      type: 'noteOff'
+      kind: 'noteOff'
       key: number
       delayTime?: number
     }

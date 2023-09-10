@@ -3,8 +3,8 @@ import './text-encoder-decoder.js'
 import { PROCESSOR_NAME } from './constants.js'
 import init, { SoundFont2Synthesizer } from './generated/wasm/synthesizers'
 import {
+  type SynthesizerEventMessageData,
   type SynthesizerNodeMessageDataForSetup,
-  type SynthesizerProcessorMessageData,
   type SynthesizerProcessorMessageDataForSetup,
 } from './types'
 
@@ -44,12 +44,12 @@ class SoundFont2SynthProcessorImpl
     const data = event.data
     let postData: SynthesizerNodeMessageDataForSetup
 
-    switch (data.type) {
+    switch (data.kind) {
       case 'sendWasmModule':
         init(WebAssembly.compile(data.wasmBytes))
           .then(() => {
             const data: SynthesizerNodeMessageDataForSetup = {
-              type: 'loadedWasmModule',
+              kind: 'loadedWasmModule',
             }
             this.port.postMessage(data)
           })
@@ -70,7 +70,7 @@ class SoundFont2SynthProcessorImpl
         )
 
         postData = {
-          type: 'initializedSynthesizer',
+          kind: 'initializedSynthesizer',
         }
         this.port.postMessage(postData)
         break
@@ -82,7 +82,7 @@ class SoundFont2SynthProcessorImpl
         }
 
         postData = {
-          type: 'connectedToPort',
+          kind: 'connectedToPort',
         }
         this.port.postMessage(postData)
         break
@@ -91,10 +91,10 @@ class SoundFont2SynthProcessorImpl
     }
   }
 
-  onmessage(event: MessageEvent<SynthesizerProcessorMessageData>): void {
+  onmessage(event: MessageEvent<SynthesizerEventMessageData>): void {
     const data = event.data
 
-    switch (data.type) {
+    switch (data.kind) {
       case 'noteOn':
         this.noteOn(data.key, data.vel, data.delayTime)
         break

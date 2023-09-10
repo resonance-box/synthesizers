@@ -11,7 +11,7 @@ self.addEventListener('message', (e) => {
       break
     case 'noteOn':
       audioWorkletPort?.postMessage({
-        type: 'noteOn',
+        kind: 'noteOn',
         key: 60,
         vel: 100,
         delayTime: 0,
