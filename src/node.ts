@@ -28,7 +28,7 @@ export class SoundFont2SynthesizerNodeImpl extends AudioWorkletNode {
       this.onmessage(event)
     }
 
-    const data: SynthesizerProcessorMessageDataForSetup = {
+    const postData: SynthesizerProcessorMessageDataForSetup = {
       kind: 'sendWasmModule',
       wasmBytes,
       sf2Bytes,
@@ -36,7 +36,7 @@ export class SoundFont2SynthesizerNodeImpl extends AudioWorkletNode {
 
     await new Promise<void>((resolve) => {
       this.finishedSetupCallback = resolve
-      this.port.postMessage(data)
+      this.port.postMessage(postData)
     })
   }
 
@@ -46,21 +46,22 @@ export class SoundFont2SynthesizerNodeImpl extends AudioWorkletNode {
 
   onmessage(event: MessageEvent<SynthesizerNodeMessageDataForSetup>): void {
     const data = event.data
+    let postData: SynthesizerProcessorMessageDataForSetup
 
     switch (data.kind) {
       case 'loadedWasmModule': {
-        const data: SynthesizerProcessorMessageDataForSetup = {
+        postData = {
           kind: 'initializeSynthesizer',
           sampleRate: this.context.sampleRate,
         }
-        this.port.postMessage(data)
+        this.port.postMessage(postData)
         break
       }
       case 'initializedSynthesizer': {
-        const data: SynthesizerProcessorMessageDataForSetup = {
+        postData = {
           kind: 'connectToPort',
         }
-        this.port.postMessage(data, [this._port])
+        this.port.postMessage(postData, [this._port])
         break
       }
       case 'connectedToPort':
