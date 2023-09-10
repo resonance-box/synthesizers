@@ -8,6 +8,10 @@ import {
   type SynthesizerProcessorMessageDataForSetup,
 } from './types'
 
+function timeToFrames(time: number, sampleRate: number): number {
+  return Math.round(time * sampleRate)
+}
+
 interface SoundFont2SynthesizerProcessor extends AudioWorkletProcessor {
   noteOn: (channel: number, key: number, vel: number, delayTime: number) => void
   noteOff: (channel: number, key: number, delayTime: number) => void
@@ -17,6 +21,7 @@ class SoundFont2SynthProcessorImpl
   extends AudioWorkletProcessor
   implements SoundFont2SynthesizerProcessor
 {
+  sampleRate?: number
   synth?: SoundFont2Synthesizer
   sf2Bytes?: ArrayBuffer
   _port?: MessagePort
@@ -28,6 +33,7 @@ class SoundFont2SynthProcessorImpl
       this.onmessageForSetup(event)
     }
 
+    this.sampleRate = undefined
     this.synth = undefined
     this.sf2Bytes = undefined
   }
@@ -57,6 +63,7 @@ class SoundFont2SynthProcessorImpl
           throw new Error('sf2Bytes is undefined')
         }
 
+        this.sampleRate = data.sampleRate
         this.synth = new SoundFont2Synthesizer(
           new Uint8Array(this.sf2Bytes),
           data.sampleRate,
@@ -100,17 +107,25 @@ class SoundFont2SynthProcessorImpl
   }
 
   noteOn(key: number, vel: number, delayTime?: number): void {
-    if (this.synth == null) return
-    this.synth.noteOn(key, vel, delayTime)
+    if (this.sampleRate === undefined || this.synth === undefined) {
+      return
+    }
+
+    this.synth.noteOn(key, vel, timeToFrames(delayTime ?? 0, this.sampleRate))
   }
 
   noteOff(key: number, delayTime?: number): void {
-    if (this.synth == null) return
-    this.synth.noteOff(key, delayTime)
+    if (this.sampleRate === undefined || this.synth === undefined) {
+      return
+    }
+
+    this.synth.noteOff(key, timeToFrames(delayTime ?? 0, this.sampleRate))
   }
 
   process(_inputs: Float32Array[][], outputs: Float32Array[][]): boolean {
-    if (this.synth == null) return true
+    if (this.synth === undefined) {
+      return true
+    }
 
     const outputChannels = outputs[0]
     const blockSize = outputChannels[0].length
